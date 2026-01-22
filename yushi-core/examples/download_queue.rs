@@ -33,15 +33,24 @@ async fn main() -> Result<()> {
                     task_id,
                     downloaded,
                     total,
+                    speed,
+                    eta,
                 } => {
                     let progress = (downloaded as f64 / total as f64) * 100.0;
-                    println!(
-                        "📊 任务 {} 进度: {:.2}% ({}/{})",
+                    let speed_mb = speed as f64 / 1024.0 / 1024.0;
+                    print!(
+                        "📊 任务 {} 进度: {:.2}% ({}/{}) @ {:.2} MB/s",
                         &task_id[..8],
                         progress,
                         downloaded,
-                        total
+                        total,
+                        speed_mb
                     );
+                    if let Some(eta_secs) = eta {
+                        println!(" (ETA: {}s)", eta_secs);
+                    } else {
+                        println!();
+                    }
                 }
                 QueueEvent::TaskCompleted { task_id } => {
                     println!("✨ 任务完成: {}", task_id);
@@ -57,6 +66,16 @@ async fn main() -> Result<()> {
                 }
                 QueueEvent::TaskCancelled { task_id } => {
                     println!("🚫 任务取消: {}", task_id);
+                }
+                QueueEvent::VerifyStarted { task_id } => {
+                    println!("🔍 开始校验: {}", task_id);
+                }
+                QueueEvent::VerifyCompleted { task_id, success } => {
+                    if success {
+                        println!("✅ 校验通过: {}", task_id);
+                    } else {
+                        println!("❌ 校验失败: {}", task_id);
+                    }
                 }
             }
         }
