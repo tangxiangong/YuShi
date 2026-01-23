@@ -19,15 +19,6 @@ interface TaskItemProps {
   onRefreshNeeded: () => void;
 }
 
-const STATUS_TEXT: Record<string, string> = {
-  Completed: "已完成",
-  Downloading: "下载中",
-  Paused: "已暂停",
-  Failed: "失败",
-  Cancelled: "已取消",
-  Pending: "等待中",
-};
-
 export function TaskItem({ task, onRefreshNeeded }: TaskItemProps) {
   const progress = task.total_size > 0
     ? (task.downloaded / task.total_size) * 100

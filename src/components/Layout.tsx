@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { Menu, Plus } from "lucide-react";
-import { cn } from "../lib/utils";
 
 interface LayoutProps {
   children: ReactNode;
