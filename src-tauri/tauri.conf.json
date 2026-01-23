@@ -36,7 +36,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/tangxiangong/YuShi/releases/latest/download/latest.json"
+        "https://github.com/tangxiangong/yushi/releases/latest/download/latest.json"
       ],
       "dialog": false,
       "pubkey": ""
