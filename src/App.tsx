@@ -8,7 +8,7 @@ import { HistoryModal } from "./components/HistoryModal";
 import { UpdateModal } from "./components/UpdateModal";
 import { DownloadTask, QueueEvent } from "./types";
 import { getConfig, getTasks } from "./commands";
-import { Inbox } from "lucide-react";
+import { Inbox, Plus } from "lucide-react";
 
 function App() {
   const [tasks, setTasks] = useState<DownloadTask[]>([]);
