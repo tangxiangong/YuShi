@@ -120,14 +120,27 @@ pub enum QueueEvent {
 /// 单文件下载进度事件
 #[derive(Debug, Clone)]
 pub enum ProgressEvent {
-    /// 初始化完成，获取到文件总大小
-    Initialized { total_size: u64 },
+    /// 初始化完成，获取到文件总大小（None 表示未知大小）
+    Initialized { total_size: Option<u64> },
     /// 分块下载进度更新
     ChunkUpdated { chunk_index: usize, delta: u64 },
+    /// 流式下载进度更新
+    StreamUpdated { downloaded: u64 },
     /// 下载完成
     Finished,
     /// 下载失败
     Failed(String),
+}
+
+/// 下载模式
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DownloadMode {
+    /// 分块下载（需要 Content-Length）
+    Chunked,
+    /// 流式下载（不需要 Content-Length）
+    Streaming,
+    /// 自动选择（优先分块，回退到流式）
+    Auto,
 }
 
 /// 下载配置
@@ -147,6 +160,8 @@ pub struct DownloadConfig {
     pub timeout: u64,
     /// 用户代理
     pub user_agent: Option<String>,
+    /// 下载模式
+    pub mode: DownloadMode,
 }
 
 impl Default for DownloadConfig {
@@ -159,6 +174,7 @@ impl Default for DownloadConfig {
             proxy: None,
             timeout: 30,
             user_agent: Some("YuShi/1.0".to_string()),
+            mode: DownloadMode::Auto,
         }
     }
 }

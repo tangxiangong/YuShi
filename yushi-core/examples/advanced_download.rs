@@ -59,13 +59,20 @@ async fn example_custom_config() -> Result<()> {
         while let Some(event) = rx.recv().await {
             match event {
                 ProgressEvent::Initialized { total_size } => {
-                    println!(
-                        "开始下载，文件大小: {:.2} MB",
-                        total_size as f64 / 1024.0 / 1024.0
-                    );
+                    if let Some(size) = total_size {
+                        println!(
+                            "开始下载，文件大小: {:.2} MB",
+                            size as f64 / 1024.0 / 1024.0
+                        );
+                    } else {
+                        println!("开始流式下载（大小未知）");
+                    }
                 }
                 ProgressEvent::ChunkUpdated { .. } => {
                     // 这里可以计算进度，但为了简化示例，我们跳过
+                }
+                ProgressEvent::StreamUpdated { downloaded } => {
+                    println!("已下载: {:.2} MB", downloaded as f64 / 1024.0 / 1024.0);
                 }
                 ProgressEvent::Finished => {
                     println!("✅ 下载完成!");

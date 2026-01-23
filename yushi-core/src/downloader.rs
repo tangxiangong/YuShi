@@ -1,6 +1,6 @@
 use crate::{
     state::{ChunkState, DownloadState},
-    types::{DownloadConfig, ProgressEvent},
+    types::{DownloadConfig, DownloadMode, ProgressEvent},
     utils::SpeedLimiter,
 };
 use anyhow::{Result, anyhow};
@@ -70,23 +70,98 @@ impl YuShi {
             .await?;
         let state = Arc::new(tokio::sync::RwLock::new(state));
 
-        let total_size = state.read().await.total_size;
+        let (total_size, is_streaming) = {
+            let s = state.read().await;
+            (s.total_size, s.is_streaming)
+        };
+
         let _ = event_tx
             .send(ProgressEvent::Initialized { total_size })
             .await;
 
+        if is_streaming {
+            // 流式下载
+            self.download_streaming(url, &dest_path, event_tx).await
+        } else {
+            // 分块下载
+            self.download_chunked(state, &dest_path, &state_path, event_tx)
+                .await
+        }
+    }
+
+    /// 流式下载（不需要 Content-Length）
+    async fn download_streaming(
+        &self,
+        url: &str,
+        dest: &std::path::PathBuf,
+        event_tx: mpsc::Sender<ProgressEvent>,
+    ) -> Result<()> {
+        let mut request = self.client.get(url);
+
+        // 添加自定义头
+        for (key, value) in &self.config.headers {
+            request = request.header(key, value);
+        }
+
+        // 添加 User-Agent
+        if let Some(ua) = &self.config.user_agent {
+            request = request.header(USER_AGENT, ua);
+        }
+
+        let response = request.send().await?;
+        if !response.status().is_success() {
+            return Err(anyhow!("HTTP error: {}", response.status()));
+        }
+
+        let mut file = fs::File::create(dest).await?;
+        let mut stream = response.bytes_stream();
+        let mut downloaded = 0u64;
+        let speed_limiter = Arc::new(TokioRwLock::new(SpeedLimiter::new(self.config.speed_limit)));
+
+        while let Some(item) = stream.next().await {
+            let chunk_data = item.map_err(|e| anyhow!("Stream error: {}", e))?;
+            file.write_all(&chunk_data).await?;
+
+            let len = chunk_data.len() as u64;
+            downloaded += len;
+
+            // 速度限制
+            speed_limiter.write().await.wait(len).await;
+
+            let _ = event_tx
+                .send(ProgressEvent::StreamUpdated { downloaded })
+                .await;
+        }
+
+        file.flush().await?;
+        event_tx.send(ProgressEvent::Finished).await?;
+        Ok(())
+    }
+
+    /// 分块下载（需要 Content-Length）
+    async fn download_chunked(
+        &self,
+        state: Arc<tokio::sync::RwLock<DownloadState>>,
+        dest_path: &Path,
+        state_path: &Path,
+        event_tx: mpsc::Sender<ProgressEvent>,
+    ) -> Result<()> {
         let semaphore = Arc::new(Semaphore::new(self.config.max_concurrent));
         let speed_limiter = Arc::new(TokioRwLock::new(SpeedLimiter::new(self.config.speed_limit)));
         let mut workers = Vec::new();
 
-        let chunks_count = { state.read().await.chunks.len() };
+        let (chunks_count, url) = {
+            let s = state.read().await;
+            (s.chunks.len(), s.url.clone())
+        };
+
         for i in 0..chunks_count {
             let permit = semaphore.clone().acquire_owned().await?;
             let state_c = Arc::clone(&state);
             let client_c = self.client.clone();
-            let url_c = url.to_string();
-            let dest_c = dest_path.clone();
-            let state_file_c = state_path.clone();
+            let url_c = url.clone();
+            let dest_c = dest_path.to_path_buf();
+            let state_file_c = state_path.to_path_buf();
             let tx_c = event_tx.clone();
             let speed_limiter_c = Arc::clone(&speed_limiter);
             let headers = self.config.headers.clone();
@@ -97,8 +172,8 @@ impl YuShi {
                     i,
                     client_c,
                     url_c,
-                    dest_c,
-                    state_file_c,
+                    &dest_c,
+                    &state_file_c,
                     state_c,
                     tx_c,
                     speed_limiter_c,
@@ -126,8 +201,8 @@ impl YuShi {
         index: usize,
         client: reqwest::Client,
         url: String,
-        dest: std::path::PathBuf,
-        state_file: std::path::PathBuf,
+        dest: &Path,
+        state_file: &Path,
         state_lock: Arc<tokio::sync::RwLock<DownloadState>>,
         tx: mpsc::Sender<ProgressEvent>,
         speed_limiter: Arc<TokioRwLock<SpeedLimiter>>,
@@ -196,7 +271,7 @@ impl YuShi {
 
                         // 保存状态
                         let state = state_lock.read().await;
-                        state.save(&state_file).await?;
+                        state.save(state_file).await?;
                     }
 
                     let mut s = state_lock.write().await;
@@ -232,13 +307,48 @@ impl YuShi {
             return Ok(state);
         }
 
-        // 创建新状态
+        // 检查服务器是否支持 Range 请求和 Content-Length
         let res = self.client.head(url).send().await?;
-        let total_size = res
+        let total_size_opt = res
             .headers()
             .get(CONTENT_LENGTH)
-            .and_then(|v| v.to_str().ok()?.parse::<u64>().ok())
-            .ok_or_else(|| anyhow!("Server must support Content-Length"))?;
+            .and_then(|v| v.to_str().ok()?.parse::<u64>().ok());
+
+        let supports_range = res
+            .headers()
+            .get("accept-ranges")
+            .map(|v| v.to_str().unwrap_or("").contains("bytes"))
+            .unwrap_or(false);
+
+        // 根据配置和服务器能力决定下载模式
+        let use_streaming = match self.config.mode {
+            DownloadMode::Streaming => true,
+            DownloadMode::Chunked => {
+                if total_size_opt.is_none() || !supports_range {
+                    return Err(anyhow!(
+                        "Server doesn't support chunked downloads (missing Content-Length or Range support)"
+                    ));
+                }
+                false
+            }
+            DownloadMode::Auto => {
+                // 如果没有 Content-Length 或不支持 Range，使用流式下载
+                total_size_opt.is_none() || !supports_range
+            }
+        };
+
+        if use_streaming {
+            // 流式下载模式
+            return Ok(DownloadState {
+                url: url.to_string(),
+                total_size: total_size_opt,
+                chunks: Vec::new(),
+                is_streaming: true,
+            });
+        }
+
+        // 分块下载模式
+        let total_size = total_size_opt.unwrap(); // 已经检查过存在
 
         let file = fs::File::create(dest).await?;
         file.set_len(total_size).await?;
@@ -261,8 +371,9 @@ impl YuShi {
 
         let state = DownloadState {
             url: url.to_string(),
-            total_size,
+            total_size: Some(total_size),
             chunks,
+            is_streaming: false,
         };
         state.save(state_path).await?;
         Ok(state)

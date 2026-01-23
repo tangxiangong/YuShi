@@ -242,10 +242,12 @@ impl DownloadQueue {
                 while let Some(event) = rx.recv().await {
                     match event {
                         ProgressEvent::Initialized { total_size } => {
-                            total = total_size;
+                            if let Some(size) = total_size {
+                                total = size;
+                            }
                             let mut tasks = tasks_clone.write().await;
                             if let Some(task) = tasks.get_mut(&task_id_clone) {
-                                task.total_size = total_size;
+                                task.total_size = total_size.unwrap_or(0);
                             }
                         }
                         ProgressEvent::ChunkUpdated { delta, .. } => {
@@ -253,7 +255,11 @@ impl DownloadQueue {
 
                             // 更新速度统计
                             let speed = speed_calc.update(downloaded);
-                            let eta = speed_calc.calculate_eta(downloaded, total);
+                            let eta = if total > 0 {
+                                speed_calc.calculate_eta(downloaded, total)
+                            } else {
+                                None
+                            };
 
                             let mut tasks = tasks_clone.write().await;
                             if let Some(task) = tasks.get_mut(&task_id_clone) {
@@ -269,6 +275,31 @@ impl DownloadQueue {
                                     total,
                                     speed,
                                     eta,
+                                })
+                                .await;
+                        }
+                        ProgressEvent::StreamUpdated {
+                            downloaded: stream_downloaded,
+                        } => {
+                            downloaded = stream_downloaded;
+
+                            // 更新速度统计
+                            let speed = speed_calc.update(downloaded);
+
+                            let mut tasks = tasks_clone.write().await;
+                            if let Some(task) = tasks.get_mut(&task_id_clone) {
+                                task.downloaded = downloaded;
+                                task.speed = speed;
+                                task.eta = None; // 流式下载无法预估剩余时间
+                            }
+
+                            let _ = queue_event_tx_clone
+                                .send(QueueEvent::TaskProgress {
+                                    task_id: task_id_clone.clone(),
+                                    downloaded,
+                                    total: 0, // 流式下载时 total 为 0
+                                    speed,
+                                    eta: None,
                                 })
                                 .await;
                         }

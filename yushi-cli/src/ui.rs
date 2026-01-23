@@ -17,14 +17,27 @@ impl ProgressManager {
         }
     }
 
-    pub async fn add_task(&self, task_id: String, total_size: u64) {
-        let pb = self.multi.add(ProgressBar::new(total_size));
-        pb.set_style(
-            ProgressStyle::default_bar()
-                .template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")
-                .unwrap()
-                .progress_chars("#>-"),
-        );
+    pub async fn add_task(&self, task_id: String, total_size: Option<u64>) {
+        let pb = if let Some(size) = total_size {
+            // 已知大小，使用进度条
+            let pb = self.multi.add(ProgressBar::new(size));
+            pb.set_style(
+                ProgressStyle::default_bar()
+                    .template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+                    .unwrap()
+                    .progress_chars("#>-"),
+            );
+            pb
+        } else {
+            // 未知大小，使用旋转器
+            let pb = self.multi.add(ProgressBar::new_spinner());
+            pb.set_style(
+                ProgressStyle::default_spinner()
+                    .template("{msg}\n{spinner:.green} [{elapsed_precise}] {bytes} ({bytes_per_sec}) - 流式下载")
+                    .unwrap(),
+            );
+            pb
+        };
         pb.set_message(format!("📥 {}", &task_id[..8]));
 
         let mut bars = self.bars.write().await;

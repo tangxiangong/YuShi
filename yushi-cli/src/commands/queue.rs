@@ -111,14 +111,17 @@ async fn list_tasks() -> Result<()> {
                 format_size(task.downloaded),
                 format_size(task.total_size)
             );
+        } else {
+            // 流式下载，只显示已下载量
+            println!("  进度: {} (流式下载)", format_size(task.downloaded));
+        }
 
-            if task.speed > 0 {
-                println!("  速度: {}/s", format_size(task.speed));
-            }
+        if task.speed > 0 {
+            println!("  速度: {}/s", format_size(task.speed));
+        }
 
-            if let Some(eta) = task.eta {
-                println!("  剩余时间: {}s", eta);
-            }
+        if let Some(eta) = task.eta {
+            println!("  剩余时间: {}s", eta);
         }
 
         if let Some(error) = &task.error {
@@ -173,7 +176,10 @@ async fn start_queue(max_tasks: usize, connections: usize) -> Result<()> {
                         .update_progress(&task_id, downloaded, speed)
                         .await;
                     if total > 0 && downloaded == 0 {
-                        progress_mgr.add_task(task_id, total).await;
+                        progress_mgr.add_task(task_id, Some(total)).await;
+                    } else if total == 0 && downloaded == 0 {
+                        // 流式下载
+                        progress_mgr.add_task(task_id, None).await;
                     }
                 }
                 QueueEvent::TaskCompleted { task_id } => {

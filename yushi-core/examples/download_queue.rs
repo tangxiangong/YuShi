@@ -36,16 +36,26 @@ async fn main() -> Result<()> {
                     speed,
                     eta,
                 } => {
-                    let progress = (downloaded as f64 / total as f64) * 100.0;
                     let speed_mb = speed as f64 / 1024.0 / 1024.0;
-                    print!(
-                        "📊 任务 {} 进度: {:.2}% ({}/{}) @ {:.2} MB/s",
-                        &task_id[..8],
-                        progress,
-                        downloaded,
-                        total,
-                        speed_mb
-                    );
+                    if total > 0 {
+                        let progress = (downloaded as f64 / total as f64) * 100.0;
+                        print!(
+                            "📊 任务 {} 进度: {:.2}% ({}/{}) @ {:.2} MB/s",
+                            &task_id[..8],
+                            progress,
+                            downloaded,
+                            total,
+                            speed_mb
+                        );
+                    } else {
+                        // 流式下载，无法显示百分比
+                        print!(
+                            "📊 任务 {} 进度: {} bytes @ {:.2} MB/s (流式下载)",
+                            &task_id[..8],
+                            downloaded,
+                            speed_mb
+                        );
+                    }
                     if let Some(eta_secs) = eta {
                         println!(" (ETA: {}s)", eta_secs);
                     } else {

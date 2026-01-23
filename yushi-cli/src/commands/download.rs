@@ -71,18 +71,38 @@ pub async fn execute(args: DownloadArgs) -> Result<()> {
             match event {
                 ProgressEvent::Initialized { total_size } => {
                     if !quiet {
-                        let bar = ProgressBar::new(total_size);
-                        bar.set_style(
-                            ProgressStyle::default_bar()
-                                .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})")
-                                .unwrap()
-                                .progress_chars("#>-"),
-                        );
-                        pb = Some(bar);
+                        if let Some(size) = total_size {
+                            // 分块下载，已知文件大小
+                            let bar = ProgressBar::new(size);
+                            bar.set_style(
+                                ProgressStyle::default_bar()
+                                    .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})")
+                                    .unwrap()
+                                    .progress_chars("#>-"),
+                            );
+                            pb = Some(bar);
+                        } else {
+                            // 流式下载，未知文件大小
+                            let bar = ProgressBar::new_spinner();
+                            bar.set_style(
+                                ProgressStyle::default_spinner()
+                                    .template("{spinner:.green} [{elapsed_precise}] {bytes} ({bytes_per_sec}) - 流式下载")
+                                    .unwrap(),
+                            );
+                            pb = Some(bar);
+                        }
                     }
                 }
                 ProgressEvent::ChunkUpdated { delta, .. } => {
                     downloaded += delta;
+                    if let Some(ref bar) = pb {
+                        bar.set_position(downloaded);
+                    }
+                }
+                ProgressEvent::StreamUpdated {
+                    downloaded: stream_downloaded,
+                } => {
+                    downloaded = stream_downloaded;
                     if let Some(ref bar) = pb {
                         bar.set_position(downloaded);
                     }

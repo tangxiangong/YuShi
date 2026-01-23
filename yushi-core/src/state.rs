@@ -18,8 +18,11 @@ pub(crate) struct ChunkState {
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct DownloadState {
     pub url: String,
-    pub total_size: u64,
+    /// 文件总大小，None 表示未知（流式下载）
+    pub total_size: Option<u64>,
     pub chunks: Vec<ChunkState>,
+    /// 是否为流式下载模式
+    pub is_streaming: bool,
 }
 
 impl DownloadState {
