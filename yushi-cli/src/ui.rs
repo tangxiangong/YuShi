@@ -2,7 +2,7 @@ use console::style;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::RwLock;
-use yushi_core::nbyte::Storage;
+use yushi_core::utils::XByte;
 
 pub struct ProgressManager {
     multi: MultiProgress,
@@ -81,7 +81,7 @@ pub fn parse_speed_limit(limit: &str) -> Option<u64> {
 }
 
 pub fn format_size(bytes: u64) -> String {
-    Storage::from_bytes(bytes).to_string()
+    XByte::from_bytes(bytes).to_string()
 }
 
 pub fn print_success(msg: &str) {

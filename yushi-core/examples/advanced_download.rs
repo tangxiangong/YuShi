@@ -68,10 +68,10 @@ async fn example_custom_config() -> Result<()> {
                         println!("开始流式下载（大小未知）");
                     }
                 }
-                ProgressEvent::ChunkUpdated { .. } => {
+                ProgressEvent::ChunkDownloading { .. } => {
                     // 这里可以计算进度，但为了简化示例，我们跳过
                 }
-                ProgressEvent::StreamUpdated { downloaded } => {
+                ProgressEvent::StreamDownloading { downloaded } => {
                     println!("已下载: {:.2} MB", downloaded as f64 / 1024.0 / 1024.0);
                 }
                 ProgressEvent::Finished => {

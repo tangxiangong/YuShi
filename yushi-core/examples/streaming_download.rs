@@ -1,6 +1,6 @@
 use anyhow::Result;
 use tokio::sync::mpsc;
-use yushi_core::{DownloadConfig, DownloadMode, ProgressEvent, YuShi};
+use yushi_core::{DownloadConfig, ProgressEvent, YuShi};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -9,10 +9,7 @@ async fn main() -> Result<()> {
     let (tx, mut rx) = mpsc::channel(1024);
 
     // 配置为流式下载模式
-    let config = DownloadConfig {
-        mode: DownloadMode::Streaming,
-        ..Default::default()
-    };
+    let config = DownloadConfig::default();
 
     let downloader = YuShi::with_config(config);
 
@@ -27,10 +24,10 @@ async fn main() -> Result<()> {
                         println!("📡 流式下载开始（大小未知）");
                     }
                 }
-                ProgressEvent::StreamUpdated { downloaded } => {
+                ProgressEvent::StreamDownloading { downloaded } => {
                     println!("📊 已下载: {:.2} MB", downloaded as f64 / 1024.0 / 1024.0);
                 }
-                ProgressEvent::ChunkUpdated { delta, .. } => {
+                ProgressEvent::ChunkDownloading { delta, .. } => {
                     println!("📊 分块下载: +{:.2} KB", delta as f64 / 1024.0);
                 }
                 ProgressEvent::Finished => {

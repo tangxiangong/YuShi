@@ -250,7 +250,7 @@ impl DownloadQueue {
                                 task.total_size = total_size.unwrap_or(0);
                             }
                         }
-                        ProgressEvent::ChunkUpdated { delta, .. } => {
+                        ProgressEvent::ChunkDownloading { delta, .. } => {
                             downloaded += delta;
 
                             // 更新速度统计
@@ -278,7 +278,7 @@ impl DownloadQueue {
                                 })
                                 .await;
                         }
-                        ProgressEvent::StreamUpdated {
+                        ProgressEvent::StreamDownloading {
                             downloaded: stream_downloaded,
                         } => {
                             downloaded = stream_downloaded;

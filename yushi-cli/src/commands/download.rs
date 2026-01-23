@@ -93,13 +93,13 @@ pub async fn execute(args: DownloadArgs) -> Result<()> {
                         }
                     }
                 }
-                ProgressEvent::ChunkUpdated { delta, .. } => {
+                ProgressEvent::ChunkDownloading { delta, .. } => {
                     downloaded += delta;
                     if let Some(ref bar) = pb {
                         bar.set_position(downloaded);
                     }
                 }
-                ProgressEvent::StreamUpdated {
+                ProgressEvent::StreamDownloading {
                     downloaded: stream_downloaded,
                 } => {
                     downloaded = stream_downloaded;

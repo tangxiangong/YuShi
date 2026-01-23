@@ -3,59 +3,59 @@ use anyhow::Result;
 use fs_err::tokio as fs;
 use md5::{Digest, Md5};
 use sha2::Sha256;
-use std::path::Path;
+use std::{
+    path::{Path, PathBuf},
+    time::{Duration, Instant},
+};
 use tokio::io::AsyncReadExt;
 
-/// 速度限制器
+/// Download Speed Limiter
+#[derive(Debug, Clone)]
 pub struct SpeedLimiter {
-    limit: Option<u64>,
-    last_check: std::time::Instant,
+    limit: u64,
+    last_check: Instant,
     bytes_in_period: u64,
 }
 
 impl SpeedLimiter {
-    /// 创建新的速度限制器
-    pub fn new(limit: Option<u64>) -> Self {
+    /// Create new speed limiter with limit in bytes per second
+    pub fn new(limit: u64) -> Self {
         Self {
             limit,
-            last_check: std::time::Instant::now(),
+            last_check: Instant::now(),
             bytes_in_period: 0,
         }
     }
 
-    /// 等待以满足速度限制
     pub async fn wait(&mut self, bytes: u64) {
-        if let Some(limit) = self.limit {
-            self.bytes_in_period += bytes;
-            let elapsed = self.last_check.elapsed();
+        let limit = self.limit;
+        self.bytes_in_period += bytes;
+        let elapsed = self.last_check.elapsed();
 
-            if elapsed.as_secs() >= 1 {
-                // 重置计数器
-                self.last_check = std::time::Instant::now();
-                self.bytes_in_period = 0;
-            } else if self.bytes_in_period > limit {
-                // 需要等待
-                let wait_time = std::time::Duration::from_secs(1) - elapsed;
-                tokio::time::sleep(wait_time).await;
-                self.last_check = std::time::Instant::now();
-                self.bytes_in_period = 0;
-            }
+        if elapsed.as_secs() >= 1 {
+            self.last_check = Instant::now();
+            self.bytes_in_period = 0;
+        } else if self.bytes_in_period > limit {
+            let wait_time = Duration::from_secs(1) - elapsed;
+            tokio::time::sleep(wait_time).await;
+            self.last_check = Instant::now();
+            self.bytes_in_period = 0;
         }
     }
 }
 
-/// 速度计算器
+/// Download Speed Calculator
+#[derive(Debug, Clone)]
 pub struct SpeedCalculator {
-    start_time: std::time::Instant,
-    last_update: std::time::Instant,
+    start_time: Instant,
+    last_update: Instant,
     last_bytes: u64,
     current_speed: u64,
 }
 
 impl SpeedCalculator {
-    /// 创建新的速度计算器
     pub fn new() -> Self {
-        let now = std::time::Instant::now();
+        let now = Instant::now();
         Self {
             start_time: now,
             last_update: now,
@@ -66,7 +66,7 @@ impl SpeedCalculator {
 
     /// 更新速度统计
     pub fn update(&mut self, total_downloaded: u64) -> u64 {
-        let now = std::time::Instant::now();
+        let now = Instant::now();
         let elapsed = now.duration_since(self.last_update).as_secs_f64();
 
         if elapsed >= 1.0 {
@@ -131,7 +131,7 @@ pub async fn verify_file(path: &Path, checksum: &ChecksumType) -> Result<bool> {
 }
 
 /// 自动重命名文件以避免冲突
-pub fn auto_rename(path: &Path) -> std::path::PathBuf {
+pub fn auto_rename(path: &Path) -> PathBuf {
     if !path.exists() {
         return path.to_path_buf();
     }
@@ -153,6 +153,165 @@ pub fn auto_rename(path: &Path) -> std::path::PathBuf {
             return new_path;
         }
         counter += 1;
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct XByte {
+    pub(crate) quotient: u64,
+    pub(crate) remainder: u64,
+    pub(crate) unit: Unit,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Unit {
+    B,
+    KB,
+    MB,
+    GB,
+    TB,
+    PB,
+}
+
+impl std::fmt::Display for Unit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Unit::B => "B",
+                Unit::KB => "KB",
+                Unit::MB => "MB",
+                Unit::GB => "GB",
+                Unit::TB => "TB",
+                Unit::PB => "PB",
+            }
+        )
+    }
+}
+
+impl XByte {
+    const SHIFT_KB: u64 = 10;
+    const SHIFT_MB: u64 = 20;
+    const SHIFT_GB: u64 = 30;
+    const SHIFT_TB: u64 = 40;
+    const SHIFT_PB: u64 = 50;
+
+    const SCALE_KB: f64 = 1.0 / (1u64 << Self::SHIFT_KB) as f64;
+    const SCALE_MB: f64 = 1.0 / (1u64 << Self::SHIFT_MB) as f64;
+    const SCALE_GB: f64 = 1.0 / (1u64 << Self::SHIFT_GB) as f64;
+    const SCALE_TB: f64 = 1.0 / (1u64 << Self::SHIFT_TB) as f64;
+    const SCALE_PB: f64 = 1.0 / (1u64 << Self::SHIFT_PB) as f64;
+
+    pub fn new(quotient: u64, remainder: u64, unit: Unit) -> Self {
+        Self {
+            quotient,
+            remainder,
+            unit,
+        }
+    }
+
+    pub fn from_bytes(bytes: u64) -> Self {
+        if bytes >= (1 << Self::SHIFT_PB) {
+            let q = bytes >> Self::SHIFT_PB;
+            let r = bytes & ((1 << Self::SHIFT_PB) - 1);
+            XByte::new(q, r, Unit::PB)
+        } else if bytes >= (1 << Self::SHIFT_TB) {
+            let q = bytes >> Self::SHIFT_TB;
+            let r = bytes & ((1 << Self::SHIFT_TB) - 1);
+            XByte::new(q, r, Unit::TB)
+        } else if bytes >= (1 << Self::SHIFT_GB) {
+            let q = bytes >> Self::SHIFT_GB;
+            let r = bytes & ((1 << Self::SHIFT_GB) - 1);
+            XByte::new(q, r, Unit::GB)
+        } else if bytes >= (1 << Self::SHIFT_MB) {
+            let q = bytes >> Self::SHIFT_MB;
+            let r = bytes & ((1 << Self::SHIFT_MB) - 1);
+            XByte::new(q, r, Unit::MB)
+        } else if bytes >= (1 << Self::SHIFT_KB) {
+            let q = bytes >> Self::SHIFT_KB;
+            let r = bytes & ((1 << Self::SHIFT_KB) - 1);
+            XByte::new(q, r, Unit::KB)
+        } else {
+            XByte::new(bytes, 0, Unit::B)
+        }
+    }
+
+    pub fn to_bytes(&self) -> u64 {
+        match self.unit {
+            Unit::B => self.quotient,
+            Unit::KB => (self.quotient << Self::SHIFT_KB) | self.remainder,
+            Unit::MB => (self.quotient << Self::SHIFT_MB) | self.remainder,
+            Unit::GB => (self.quotient << Self::SHIFT_GB) | self.remainder,
+            Unit::TB => (self.quotient << Self::SHIFT_TB) | self.remainder,
+            Unit::PB => (self.quotient << Self::SHIFT_PB) | self.remainder,
+        }
+    }
+
+    pub fn to_float(&self) -> f64 {
+        match self.unit {
+            Unit::B => self.quotient as f64,
+            Unit::KB => self.quotient as f64 + (self.remainder as f64 * Self::SCALE_KB),
+            Unit::MB => self.quotient as f64 + (self.remainder as f64 * Self::SCALE_MB),
+            Unit::GB => self.quotient as f64 + (self.remainder as f64 * Self::SCALE_GB),
+            Unit::TB => self.quotient as f64 + (self.remainder as f64 * Self::SCALE_TB),
+            Unit::PB => self.quotient as f64 + (self.remainder as f64 * Self::SCALE_PB),
+        }
+    }
+
+    pub fn quotient(&self) -> u64 {
+        self.quotient
+    }
+
+    pub fn remainder(&self) -> u64 {
+        self.remainder
+    }
+
+    pub fn unit(&self) -> Unit {
+        self.unit
+    }
+}
+
+impl std::ops::Add<XByte> for XByte {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        let total_bytes = self.to_bytes() + other.to_bytes();
+        XByte::from_bytes(total_bytes)
+    }
+}
+
+impl std::ops::Add<&XByte> for XByte {
+    type Output = Self;
+
+    fn add(self, other: &Self) -> Self {
+        let total_bytes = self.to_bytes() + other.to_bytes();
+        XByte::from_bytes(total_bytes)
+    }
+}
+
+impl std::ops::Add<XByte> for &XByte {
+    type Output = XByte;
+
+    fn add(self, other: XByte) -> Self::Output {
+        let total_bytes = self.to_bytes() + other.to_bytes();
+        XByte::from_bytes(total_bytes)
+    }
+}
+
+impl std::ops::Add<&XByte> for &XByte {
+    type Output = XByte;
+
+    fn add(self, other: &XByte) -> Self::Output {
+        let total_bytes = self.to_bytes() + other.to_bytes();
+        XByte::from_bytes(total_bytes)
+    }
+}
+
+impl std::fmt::Display for XByte {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let value = self.to_float();
+        write!(f, "{:.2} {}", value, self.unit)
     }
 }
 
