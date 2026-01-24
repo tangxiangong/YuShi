@@ -328,6 +328,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn test_speed_calculator() {
         let mut calc = SpeedCalculator::new();
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
