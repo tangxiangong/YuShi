@@ -1,4 +1,4 @@
-import { cn } from "../lib/utils";
+import { cn } from "../lib/utils.ts";
 import { CheckCircle, Download, History, List, Settings } from "lucide-react";
 
 interface SidebarProps {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, FolderOpen, Link2, Loader2 } from "lucide-react";
-import { addTask, getConfig } from "../commands";
+import { addTask, getConfig } from "../commands.ts";
 
 interface AddTaskModalProps {
   isOpen: boolean;

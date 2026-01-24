@@ -1,5 +1,5 @@
-import { DownloadTask } from "../types";
-import { formatBytes, formatDuration } from "../utils/format";
+import { DownloadTask } from "../types.ts";
+import { formatBytes, formatDuration } from "../utils/format.ts";
 import {
   AlertCircle,
   CheckCircle2,
@@ -12,8 +12,8 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { cancelTask, pauseTask, removeTask, resumeTask } from "../commands";
-import { cn } from "../lib/utils";
+import { cancelTask, pauseTask, removeTask, resumeTask } from "../commands.ts";
+import { cn } from "../lib/utils.ts";
 
 interface TaskItemProps {
   task: DownloadTask;
@@ -231,6 +231,7 @@ export function TaskItem({ task, onRefreshNeeded }: TaskItemProps) {
           <div className="flex sm:flex-col gap-2 self-end sm:self-center">
             {task.status === "Downloading" && (
               <button
+                type="button"
                 onClick={handlePause}
                 className="btn btn-sm btn-ghost btn-square hover:bg-warning/10 hover:text-warning transition-all duration-200"
                 title="暂停"
@@ -240,6 +241,7 @@ export function TaskItem({ task, onRefreshNeeded }: TaskItemProps) {
             )}
             {task.status === "Paused" && (
               <button
+                type="button"
                 onClick={handleResume}
                 className="btn btn-sm btn-ghost btn-square hover:bg-primary/10 hover:text-primary transition-all duration-200"
                 title="继续"
@@ -249,6 +251,7 @@ export function TaskItem({ task, onRefreshNeeded }: TaskItemProps) {
             )}
             {task.status === "Failed" && (
               <button
+                type="button"
                 onClick={handleResume}
                 className="btn btn-sm btn-warning hover:btn-primary transition-all duration-200 gap-1"
                 title="重试下载"
@@ -260,6 +263,7 @@ export function TaskItem({ task, onRefreshNeeded }: TaskItemProps) {
             {(task.status === "Downloading" || task.status === "Paused" ||
               task.status === "Pending") && (
               <button
+                type="button"
                 onClick={handleCancel}
                 className="btn btn-sm btn-ghost btn-square text-error hover:bg-error/10 transition-all duration-200"
                 title="取消"
@@ -270,6 +274,7 @@ export function TaskItem({ task, onRefreshNeeded }: TaskItemProps) {
             {(task.status === "Completed" || task.status === "Cancelled" ||
               task.status === "Failed") && (
               <button
+                type="button"
                 onClick={handleRemove}
                 className="btn btn-sm btn-ghost btn-square text-error hover:bg-error/10 transition-all duration-200"
                 title="移除"

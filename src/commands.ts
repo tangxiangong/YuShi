@@ -4,7 +4,7 @@ import type {
   CompletedTask,
   DownloadTask,
   UpdateInfo,
-} from "./types";
+} from "./types.ts";
 
 /**
  * Tauri Commands
@@ -17,7 +17,7 @@ import type {
  * @param dest - The destination path to save the file
  * @returns The task ID
  */
-export async function addTask(url: string, dest: string): Promise<string> {
+export function addTask(url: string, dest: string): Promise<string> {
   return invoke<string>("add_task", { url, dest });
 }
 
@@ -25,7 +25,7 @@ export async function addTask(url: string, dest: string): Promise<string> {
  * Get all download tasks
  * @returns Array of all download tasks
  */
-export async function getTasks(): Promise<DownloadTask[]> {
+export function getTasks(): Promise<DownloadTask[]> {
   return invoke<DownloadTask[]>("get_tasks");
 }
 
@@ -33,7 +33,7 @@ export async function getTasks(): Promise<DownloadTask[]> {
  * Pause a download task
  * @param id - The task ID to pause
  */
-export async function pauseTask(id: string): Promise<void> {
+export function pauseTask(id: string): Promise<void> {
   return invoke<void>("pause_task", { id });
 }
 
@@ -41,7 +41,7 @@ export async function pauseTask(id: string): Promise<void> {
  * Resume a paused download task
  * @param id - The task ID to resume
  */
-export async function resumeTask(id: string): Promise<void> {
+export function resumeTask(id: string): Promise<void> {
   return invoke<void>("resume_task", { id });
 }
 
@@ -49,7 +49,7 @@ export async function resumeTask(id: string): Promise<void> {
  * Cancel a download task
  * @param id - The task ID to cancel
  */
-export async function cancelTask(id: string): Promise<void> {
+export function cancelTask(id: string): Promise<void> {
   return invoke<void>("cancel_task", { id });
 }
 
@@ -57,7 +57,7 @@ export async function cancelTask(id: string): Promise<void> {
  * Remove a download task from the queue
  * @param id - The task ID to remove
  */
-export async function removeTask(id: string): Promise<void> {
+export function removeTask(id: string): Promise<void> {
   return invoke<void>("remove_task", { id });
 }
 
@@ -65,7 +65,7 @@ export async function removeTask(id: string): Promise<void> {
  * Get application configuration
  * @returns Current application configuration
  */
-export async function getConfig(): Promise<AppConfig> {
+export function getConfig(): Promise<AppConfig> {
   return invoke<AppConfig>("get_config");
 }
 
@@ -73,7 +73,7 @@ export async function getConfig(): Promise<AppConfig> {
  * Update application configuration
  * @param config - New configuration to apply
  */
-export async function updateConfig(config: AppConfig): Promise<void> {
+export function updateConfig(config: AppConfig): Promise<void> {
   return invoke<void>("update_config", { newConfig: config });
 }
 
@@ -81,7 +81,7 @@ export async function updateConfig(config: AppConfig): Promise<void> {
  * Get download history
  * @returns Array of completed tasks
  */
-export async function getHistory(): Promise<CompletedTask[]> {
+export function getHistory(): Promise<CompletedTask[]> {
   return invoke<CompletedTask[]>("get_history");
 }
 
@@ -89,7 +89,7 @@ export async function getHistory(): Promise<CompletedTask[]> {
  * Add a completed task to history
  * @param task - Completed task to add
  */
-export async function addToHistory(task: CompletedTask): Promise<void> {
+export function addToHistory(task: CompletedTask): Promise<void> {
   return invoke<void>("add_to_history", { task });
 }
 
@@ -97,14 +97,14 @@ export async function addToHistory(task: CompletedTask): Promise<void> {
  * Remove a task from history
  * @param id - History item ID to remove
  */
-export async function removeFromHistory(id: string): Promise<void> {
+export function removeFromHistory(id: string): Promise<void> {
   return invoke<void>("remove_from_history", { id });
 }
 
 /**
  * Clear all download history
  */
-export async function clearHistory(): Promise<void> {
+export function clearHistory(): Promise<void> {
   return invoke<void>("clear_history");
 }
 
@@ -113,7 +113,7 @@ export async function clearHistory(): Promise<void> {
  * @param query - Search query string
  * @returns Matching history items
  */
-export async function searchHistory(query: string): Promise<CompletedTask[]> {
+export function searchHistory(query: string): Promise<CompletedTask[]> {
   return invoke<CompletedTask[]>("search_history", { query });
 }
 
@@ -121,13 +121,13 @@ export async function searchHistory(query: string): Promise<CompletedTask[]> {
  * Check for application updates
  * @returns Update information
  */
-export async function checkForUpdates(): Promise<UpdateInfo> {
+export function checkForUpdates(): Promise<UpdateInfo> {
   return invoke<UpdateInfo>("check_for_updates");
 }
 
 /**
  * Download and install update
  */
-export async function downloadAndInstallUpdate(): Promise<void> {
+export function downloadAndInstallUpdate(): Promise<void> {
   return invoke<void>("download_and_install_update");
 }

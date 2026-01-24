@@ -13,9 +13,9 @@ import {
   getHistory,
   removeFromHistory,
   searchHistory,
-} from "../commands";
-import type { CompletedTask } from "../types";
-import { formatBytes, formatDuration } from "../utils/format";
+} from "../commands.ts";
+import type { CompletedTask } from "../types.ts";
+import { formatBytes, formatDuration } from "../utils/format.ts";
 
 interface HistoryModalProps {
   isOpen: boolean;
@@ -120,6 +120,7 @@ export function HistoryModal({ isOpen, onClose }: HistoryModalProps) {
             <span className="badge badge-neutral">{history.length} 条记录</span>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="btn btn-sm btn-ghost btn-square"
           >
@@ -140,6 +141,7 @@ export function HistoryModal({ isOpen, onClose }: HistoryModalProps) {
                 onKeyPress={(e) => e.key === "Enter" && handleSearch()}
               />
               <button
+                type="button"
                 onClick={handleSearch}
                 className="btn btn-primary join-item"
               >
@@ -148,6 +150,7 @@ export function HistoryModal({ isOpen, onClose }: HistoryModalProps) {
               </button>
             </div>
             <button
+              type="button"
               onClick={handleClearAll}
               className="btn btn-error btn-outline"
               disabled={history.length === 0}
@@ -218,6 +221,7 @@ export function HistoryModal({ isOpen, onClose }: HistoryModalProps) {
                           </div>
                         </div>
                         <button
+                          type="button"
                           onClick={() => handleRemove(item.id)}
                           className="btn btn-sm btn-ghost btn-square text-error hover:bg-error/10"
                           title="删除"

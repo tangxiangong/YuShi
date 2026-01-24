@@ -3,6 +3,7 @@
   "specifiers": {
     "npm:@tailwindcss/vite@^4.1.18": "4.1.18_vite@7.3.1__picomatch@4.0.3",
     "npm:@tauri-apps/api@^2.9.1": "2.9.1",
+    "npm:@tauri-apps/cli@*": "2.9.6",
     "npm:@tauri-apps/cli@^2.9.6": "2.9.6",
     "npm:@tauri-apps/plugin-opener@^2.5.3": "2.5.3",
     "npm:@types/react-dom@^19.2.3": "19.2.3_@types+react@19.2.9",
@@ -17,6 +18,7 @@
     "npm:tailwind-merge@^3.4.0": "3.4.0",
     "npm:tailwindcss@^4.1.18": "4.1.18",
     "npm:typescript@~5.9.3": "5.9.3",
+    "npm:vite@*": "7.3.1_picomatch@4.0.3",
     "npm:vite@^7.3.1": "7.3.1_picomatch@4.0.3"
   },
   "npm": {

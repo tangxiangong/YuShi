@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Sidebar } from "./Sidebar";
+import { Sidebar } from "./Sidebar.tsx";
 import { Menu, Plus } from "lucide-react";
 
 interface LayoutProps {
@@ -58,6 +58,7 @@ export function Layout(
           </div>
           <div className="flex-none">
             <button
+              type="button"
               onClick={onAddTask}
               className="btn btn-primary btn-sm md:btn-md gap-2 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-105 transition-all duration-200 group"
             >

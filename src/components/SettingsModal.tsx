@@ -11,9 +11,9 @@ import {
   Sparkles,
   Sun,
 } from "lucide-react";
-import { cn } from "../lib/utils";
-import { getConfig, updateConfig } from "../commands";
-import type { AppConfig } from "../types";
+import { cn } from "../lib/utils.ts";
+import { getConfig, updateConfig } from "../commands.ts";
+import type { AppConfig } from "../types.ts";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -63,7 +63,7 @@ export function SettingsModal(
     if (theme === "system") {
       root.removeAttribute("data-theme");
       const systemTheme =
-        window.matchMedia("(prefers-color-scheme: dark)").matches
+        globalThis.matchMedia("(prefers-color-scheme: dark)").matches
           ? "dim"
           : "cupcake";
       root.setAttribute("data-theme", systemTheme);
@@ -111,15 +111,24 @@ export function SettingsModal(
         {/* Sidebar */}
         <div className="w-[200px] bg-linear-to-b from-base-200/80 to-base-200/50 border-r border-base-300/50 p-4 pt-12">
           <div className="space-y-2">
-            <button className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-content shadow-lg shadow-primary/20 flex items-center gap-2">
+            <button
+              type="button"
+              className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-content shadow-lg shadow-primary/20 flex items-center gap-2"
+            >
               <Settings2 className="w-4 h-4" />
               通用
             </button>
-            <button className="w-full text-left px-4 py-2.5 rounded-xl text-sm text-base-content/60 hover:text-base-content hover:bg-base-100/50 transition-all flex items-center gap-2">
+            <button
+              type="button"
+              className="w-full text-left px-4 py-2.5 rounded-xl text-sm text-base-content/60 hover:text-base-content hover:bg-base-100/50 transition-all flex items-center gap-2"
+            >
               <Gauge className="w-4 h-4" />
               网络
             </button>
-            <button className="w-full text-left px-4 py-2.5 rounded-xl text-sm text-base-content/60 hover:text-base-content hover:bg-base-100/50 transition-all flex items-center gap-2">
+            <button
+              type="button"
+              className="w-full text-left px-4 py-2.5 rounded-xl text-sm text-base-content/60 hover:text-base-content hover:bg-base-100/50 transition-all flex items-center gap-2"
+            >
               <Sparkles className="w-4 h-4" />
               高级
             </button>
@@ -154,6 +163,7 @@ export function SettingsModal(
                     </label>
                     <div className="grid grid-cols-3 gap-3">
                       <button
+                        type="button"
                         onClick={() => setTheme("light")}
                         className={cn(
                           "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all hover:scale-105",
@@ -189,6 +199,7 @@ export function SettingsModal(
                         </span>
                       </button>
                       <button
+                        type="button"
                         onClick={() => setTheme("dark")}
                         className={cn(
                           "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all hover:scale-105",
@@ -224,6 +235,7 @@ export function SettingsModal(
                         </span>
                       </button>
                       <button
+                        type="button"
                         onClick={() => setTheme("system")}
                         className={cn(
                           "flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all hover:scale-105",
@@ -278,7 +290,10 @@ export function SettingsModal(
                       <div className="join-item flex-1 px-4 py-3 bg-base-200 border border-base-300 rounded-l-xl text-sm text-base-content/70 font-mono truncate flex items-center">
                         {defaultPath}
                       </div>
-                      <button className="btn join-item btn-outline rounded-r-xl h-auto min-h-0 font-medium hover:btn-primary transition-all">
+                      <button
+                        type="button"
+                        className="btn join-item btn-outline rounded-r-xl h-auto min-h-0 font-medium hover:btn-primary transition-all"
+                      >
                         <FolderOpen className="w-4 h-4" />
                         更改
                       </button>
@@ -363,6 +378,7 @@ export function SettingsModal(
                       应用更新
                     </label>
                     <button
+                      type="button"
                       onClick={() => {
                         onClose();
                         onOpenUpdate?.();
@@ -388,6 +404,7 @@ export function SettingsModal(
           {/* Footer Actions */}
           <div className="px-8 py-4 border-t border-base-200 bg-linear-to-r from-base-200/30 via-transparent to-base-200/30 flex justify-end gap-3">
             <button
+              type="button"
               onClick={onClose}
               disabled={saving}
               className="btn btn-ghost h-10 min-h-0 font-medium hover:bg-base-200 transition-all"
@@ -395,6 +412,7 @@ export function SettingsModal(
               取消
             </button>
             <button
+              type="button"
               onClick={handleSave}
               disabled={saving || loading}
               className="btn btn-primary h-10 min-h-0 font-semibold text-primary-content shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-105 transition-all flex items-center gap-2"

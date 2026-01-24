@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { Layout } from "./components/Layout";
-import { TaskItem } from "./components/TaskItem";
-import { AddTaskModal } from "./components/AddTaskModal";
-import { SettingsModal } from "./components/SettingsModal";
-import { HistoryModal } from "./components/HistoryModal";
-import { UpdateModal } from "./components/UpdateModal";
-import { DownloadTask, QueueEvent } from "./types";
-import { getConfig, getTasks } from "./commands";
+import { Layout } from "./components/Layout.tsx";
+import { TaskItem } from "./components/TaskItem.tsx";
+import { AddTaskModal } from "./components/AddTaskModal.tsx";
+import { SettingsModal } from "./components/SettingsModal.tsx";
+import { HistoryModal } from "./components/HistoryModal.tsx";
+import { UpdateModal } from "./components/UpdateModal.tsx";
+import { DownloadTask, QueueEvent } from "./types.ts";
+import { getConfig, getTasks } from "./commands.ts";
 import { Inbox, Plus } from "lucide-react";
 
 function App() {
@@ -32,7 +32,7 @@ function App() {
 
       if (theme === "system") {
         const systemTheme =
-          window.matchMedia("(prefers-color-scheme: dark)").matches
+          globalThis.matchMedia("(prefers-color-scheme: dark)").matches
             ? "dim"
             : "cupcake";
         root.setAttribute("data-theme", systemTheme);
@@ -44,7 +44,7 @@ function App() {
       // Fallback to system theme
       const root = document.documentElement;
       const systemTheme =
-        window.matchMedia("(prefers-color-scheme: dark)").matches
+        globalThis.matchMedia("(prefers-color-scheme: dark)").matches
           ? "dim"
           : "cupcake";
       root.setAttribute("data-theme", systemTheme);
@@ -164,6 +164,7 @@ function App() {
               {activeTab === "all" && "开始你的第一个下载任务吧"}
             </p>
             <button
+              type="button"
               onClick={() => setIsModalOpen(true)}
               className="btn btn-primary gap-2 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-105 transition-all group"
             >

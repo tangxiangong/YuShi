@@ -8,8 +8,8 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { checkForUpdates, downloadAndInstallUpdate } from "../commands";
-import type { UpdateInfo } from "../types";
+import { checkForUpdates, downloadAndInstallUpdate } from "../commands.ts";
+import type { UpdateInfo } from "../types.ts";
 import { listen } from "@tauri-apps/api/event";
 
 interface UpdateModalProps {
@@ -115,6 +115,7 @@ export function UpdateModal({ isOpen, onClose }: UpdateModalProps) {
           </div>
           {state !== "downloading" && state !== "installing" && (
             <button
+              type="button"
               onClick={onClose}
               className="btn btn-sm btn-ghost btn-square"
             >
@@ -259,6 +260,7 @@ export function UpdateModal({ isOpen, onClose }: UpdateModalProps) {
           <div className="px-8 py-4 border-t border-base-200 bg-base-200/30 flex justify-end gap-3">
             {state === "error" && (
               <button
+                type="button"
                 onClick={checkUpdate}
                 className="btn btn-ghost h-10 min-h-0 font-medium"
               >
@@ -268,6 +270,7 @@ export function UpdateModal({ isOpen, onClose }: UpdateModalProps) {
             )}
             {state !== "available" && (
               <button
+                type="button"
                 onClick={onClose}
                 className="btn btn-ghost h-10 min-h-0 font-medium"
               >
@@ -277,12 +280,14 @@ export function UpdateModal({ isOpen, onClose }: UpdateModalProps) {
             {state === "available" && (
               <>
                 <button
+                  type="button"
                   onClick={onClose}
                   className="btn btn-ghost h-10 min-h-0 font-medium"
                 >
                   稍后提醒
                 </button>
                 <button
+                  type="button"
                   onClick={handleUpdate}
                   className="btn btn-primary h-10 min-h-0 font-semibold text-primary-content shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-105 transition-all flex items-center gap-2"
                 >
